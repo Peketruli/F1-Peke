@@ -1,0 +1,32 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #222;
+  color: #eee;
+  margin: 0;
+  padding: 0;
+}
+#app {
+  max-width: 700px;
+  margin: auto;
+  padding: 2em;
+}
+.menu, .ajustes, .modo {
+  margin-bottom: 2em;
+  background: #333;
+  padding: 1em;
+  border-radius: 10px;
+}
+.button {
+  background: #e10600;
+  color: #fff;
+  border: none;
+  padding: 0.8em 1.4em;
+  margin: 0.5em;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+}
+.button:hover {
+  background: #fff;
+  color: #e10600;
+}
