@@ -12,5 +12,6 @@
   <script src="coche.js"></script>
   <script src="carrera_piloto.js"></script>
   <script src="main.js"></script>
+   <script src="circuito.js"></script>
 </body>
 </html>
