@@ -1,5 +1,3 @@
-<!DOCTYPE html>
-<html lang="es">
 <head>
   <meta charset="UTF-8">
   <title>F1 Web Game</title>
@@ -16,4 +14,3 @@
   <script src="settings.js"></script>
   <script src="main.js"></script>
 </body>
-</html>
