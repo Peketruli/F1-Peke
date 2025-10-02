@@ -3,17 +3,17 @@ function startCarreraPiloto(canvas, pilotoNombre, equipo) {
   const ancho = canvas.width, alto = canvas.height;
 
   // Configuración de coches
-  const NUM_AI = 9; // 1 jugador + 9 IA (10 en total)
+  const NUM_AI = 9;
   const coches = [];
 
   // Coche del jugador
-  const cocheJugador = new Coche(400, 500, "#e10600", pilotoNombre, true);
+  const cocheJugador = new Coche(CIRCUITO[0].x, CIRCUITO[0].y, "#e10600", pilotoNombre, true);
   coches.push(cocheJugador);
 
-  // IA
+  // IA en la salida
   for (let i = 0; i < NUM_AI; i++) {
     const pilotoAI = equipo.pilotos[i % 2] + " (IA " + (i + 1) + ")";
-    coches.push(new Coche(400 + (i - 4) * 30, 550, "#aaa", pilotoAI));
+    coches.push(new Coche(CIRCUITO[0].x + (i - 4) * 30, CIRCUITO[0].y + 30, "#aaa", pilotoAI));
   }
 
   // Control teclado
@@ -24,7 +24,7 @@ function startCarreraPiloto(canvas, pilotoNombre, equipo) {
   // Loop principal
   function loop() {
     ctx.clearRect(0, 0, ancho, alto);
-    dibujarCircuito(ctx, ancho, alto);
+    dibujarCircuitoWaypoints(ctx);
 
     // Actualizar y dibujar coches
     coches.forEach(coche => {
@@ -35,17 +35,4 @@ function startCarreraPiloto(canvas, pilotoNombre, equipo) {
     requestAnimationFrame(loop);
   }
   loop();
-}
-
-// Circuito simple (rectángulo con curva)
-function dibujarCircuito(ctx, ancho, alto) {
-  ctx.strokeStyle = "#fff";
-  ctx.lineWidth = 8;
-  ctx.beginPath();
-  ctx.moveTo(100, 100);
-  ctx.lineTo(ancho-100, 100);
-  ctx.lineTo(ancho-100, alto-100);
-  ctx.lineTo(100, alto-100);
-  ctx.closePath();
-  ctx.stroke();
 }
