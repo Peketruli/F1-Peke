@@ -9,6 +9,8 @@
   <div id="app"></div>
   <canvas id="gameCanvas" width="800" height="600" style="display:none"></canvas>
   <script src="data.js"></script>
+  <script src="coche.js"></script>
+  <script src="carrera_piloto.js"></script>
   <script src="main.js"></script>
 </body>
 </html>
