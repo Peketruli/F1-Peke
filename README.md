@@ -14,5 +14,6 @@
   <script src="main.js"></script>
    <script src="circuito.js"></script>
   <script src="simpleRace.js"></script>
+  <script src="enhancedRace.js"></script>
 </body>
 </html>
