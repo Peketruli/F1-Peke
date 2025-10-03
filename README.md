@@ -13,5 +13,6 @@
   <script src="carrera_piloto.js"></script>
   <script src="main.js"></script>
    <script src="circuito.js"></script>
+  <script src="simpleRace.js"></script>
 </body>
 </html>
