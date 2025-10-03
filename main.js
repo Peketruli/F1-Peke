@@ -1,160 +1,160 @@
-let estado = {
-  equipo: null,
-  piloto: null,
-  circuito: null,
-  puntos: 0,
-  carreras: [],
+// --- CONFIGURACIÓN DE CIRCUITO Y COCHES ---
+const canvas = document.getElementById("game-canvas");
+const ctx = canvas.getContext("2d");
+
+const pista = {
+  // Array de puntos que forman el circuito (ovalado grande)
+  puntos: [],
+  ancho: 70,
 };
 
-const app = document.getElementById('app');
-
-function renderMenu() {
-  estado = { equipo: null, piloto: null, circuito: null, puntos: 0, carreras: [] };
-  document.getElementById('circuito-canvas').style.display = 'none';
-  app.innerHTML = `
-    <div class="menu">
-      <h1>F1 Web - Modo Carrera</h1>
-      <button onclick="renderSeleccion()">Jugar Modo Carrera</button>
-    </div>
-  `;
+// Generar puntos ovalados para la pista
+function generaPista() {
+  const cx = 0, cy = 0;
+  const radioX = 400, radioY = 200;
+  const numPuntos = 200;
+  pista.puntos = [];
+  for (let i = 0; i < numPuntos; i++) {
+    const ang = (2 * Math.PI * i) / numPuntos;
+    pista.puntos.push({
+      x: cx + radioX * Math.cos(ang),
+      y: cy + radioY * Math.sin(ang),
+    });
+  }
 }
+generaPista();
 
-function renderSeleccion() {
-  document.getElementById('circuito-canvas').style.display = 'none';
-  app.innerHTML = `
-    <div class="seleccion">
-      <h2>Selecciona tu equipo, piloto y circuito</h2>
-      <label>Equipo:</label>
-      <select id="equipo-select" onchange="actualizaPilotos()">
-        <option value="">-- Elegir --</option>
-        ${EQUIPOS.map(e => `<option value="${e.id}">${e.nombre}</option>`).join("")}
-      </select>
-      <label>Piloto:</label>
-      <select id="piloto-select">
-        <option value="">-- Elegir equipo primero --</option>
-      </select>
-      <label>Circuito:</label>
-      <select id="circuito-select">
-        <option value="">-- Elegir --</option>
-        ${CIRCUITOS.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("")}
-      </select>
-      <br>
-      <button onclick="iniciarCarrera()">Empezar carrera</button>
-      <button onclick="renderMenu()">Volver</button>
-    </div>
-  `;
-}
+// --- COCHE DEL JUGADOR E IA ---
+class Coche {
+  constructor(color, nombre, isPlayer = false) {
+    this.x = pista.puntos[0].x;
+    this.y = pista.puntos[0].y;
+    this.angulo = 0;
+    this.velocidad = 0;
+    this.maxVel = 7;
+    this.nombre = nombre;
+    this.color = color;
+    this.isPlayer = isPlayer;
+    this.target = 1; // Siguiente punto a seguir en la pista
+    this.lap = 0;
+  }
 
-function actualizaPilotos() {
-  const equipoId = parseInt(document.getElementById('equipo-select').value, 10);
-  const pilotoSelect = document.getElementById('piloto-select');
-  const equipo = EQUIPOS.find(e => e.id === equipoId);
-  if (equipo) {
-    pilotoSelect.innerHTML = equipo.pilotos.map((p,i) => `<option value="${i}">${p}</option>`).join("");
-  } else {
-    pilotoSelect.innerHTML = `<option value="">-- Elegir equipo primero --</option>`;
+  update(controles) {
+    if (this.isPlayer) {
+      // Control manual: flechas/WASD
+      if (controles.up) this.velocidad = Math.min(this.velocidad + 0.2, this.maxVel);
+      else this.velocidad *= 0.98; // fricción
+      if (controles.left) this.angulo -= 0.05 * (this.velocidad/4+1);
+      if (controles.right) this.angulo += 0.05 * (this.velocidad/4+1);
+    } else {
+      // IA: sigue puntos de la pista
+      const targetPt = pista.puntos[this.target];
+      const dx = targetPt.x - this.x;
+      const dy = targetPt.y - this.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const angTarget = Math.atan2(dy, dx);
+      let diffAng = angTarget - this.angulo;
+      // Normaliza ángulo entre -PI y PI
+      diffAng = Math.atan2(Math.sin(diffAng), Math.cos(diffAng));
+      this.angulo += diffAng * 0.08;
+      this.velocidad = this.maxVel * 0.9;
+      if (dist < 32) {
+        this.target = (this.target + 1) % pista.puntos.length;
+        if (this.target === 0) this.lap++;
+      }
+    }
+    // Mueve el coche
+    this.x += Math.cos(this.angulo) * this.velocidad;
+    this.y += Math.sin(this.angulo) * this.velocidad;
+  }
+
+  draw(camX, camY) {
+    ctx.save();
+    ctx.translate(this.x-camX+canvas.width/2, this.y-camY+canvas.height/2);
+    ctx.rotate(this.angulo);
+    ctx.fillStyle = this.color;
+    ctx.fillRect(-18, -10, 36, 20);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(10, -8, 12, 16); // "cabina"
+    ctx.restore();
   }
 }
 
-function iniciarCarrera() {
-  const equipoId = parseInt(document.getElementById('equipo-select').value, 10);
-  const pilotoIdx = parseInt(document.getElementById('piloto-select').value, 10);
-  const circuitoId = parseInt(document.getElementById('circuito-select').value, 10);
-  const equipo = EQUIPOS.find(e => e.id === equipoId);
-  const piloto = equipo ? equipo.pilotos[pilotoIdx] : null;
-  const circuito = CIRCUITOS.find(c => c.id === circuitoId);
-  if (equipo && piloto != null && circuito) {
-    estado.equipo = equipo;
-    estado.piloto = piloto;
-    estado.circuito = circuito;
-    renderCarrera();
-  } else {
-    alert("Debes seleccionar equipo, piloto y circuito.");
-  }
-}
+// --- JUEGO ---
+const player = new Coche("#e10600", "Jugador", true);
+const rivales = [
+  new Coche("#0af", "IA 1"),
+  new Coche("#0f3", "IA 2"),
+  new Coche("#ff0", "IA 3"),
+];
 
-function renderCarrera() {
-  // Simulación simple: resultado aleatorio para 10 pilotos
-  const pilotos = [
-    estado.piloto,
-    "Piloto A", "Piloto B", "Piloto C", "Piloto D", "Piloto E", "Piloto F", "Piloto G", "Piloto H", "Piloto I"
-  ];
-  const resultado = pilotos
-    .map(p => ({ nombre: p, tiempo: Math.random() }))
-    .sort((a,b) => a.tiempo - b.tiempo)
-    .map((p,i) => ({ ...p, posicion: i+1, puntos: PUNTOS[i] || 0 }));
-  const miResultado = resultado.find(r => r.nombre === estado.piloto);
-  estado.puntos += miResultado.puntos;
-  estado.carreras.push({
-    circuito: estado.circuito.nombre,
-    posicion: miResultado.posicion,
-    puntos: miResultado.puntos
+let controles = { up: false, left: false, right: false };
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowUp" || e.key === "w") controles.up = true;
+  if (e.key === "ArrowLeft" || e.key === "a") controles.left = true;
+  if (e.key === "ArrowRight" || e.key === "d") controles.right = true;
+});
+document.addEventListener("keyup", (e) => {
+  if (e.key === "ArrowUp" || e.key === "w") controles.up = false;
+  if (e.key === "ArrowLeft" || e.key === "a") controles.left = false;
+  if (e.key === "ArrowRight" || e.key === "d") controles.right = false;
+});
+
+// --- BUCLE PRINCIPAL ---
+function drawCircuito(camX, camY) {
+  // Pista base
+  ctx.save();
+  ctx.translate(canvas.width/2-camX, canvas.height/2-camY);
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = pista.ancho;
+  ctx.beginPath();
+  pista.puntos.forEach((pt, i) => {
+    if (i === 0) ctx.moveTo(pt.x, pt.y);
+    else ctx.lineTo(pt.x, pt.y);
   });
-
-  app.innerHTML = `
-    <div class="carrera">
-      <h2>Carrera en ${estado.circuito.nombre}</h2>
-      <p>Vueltas: ${estado.circuito.vueltas}</p>
-      <canvas id="circuito-canvas" width="700" height="300"></canvas>
-      <h3>Resultados</h3>
-      <ol>
-        ${resultado.map(r => `<li>${r.posicion}. ${r.nombre} (${r.puntos} pts)</li>`).join("")}
-      </ol>
-      <p>Tu posición: <strong>${miResultado.posicion}</strong>, Puntos ganados: <strong>${miResultado.puntos}</strong></p>
-      <button onclick="renderSeleccion()">Siguiente carrera</button>
-      <button onclick="renderPuntuacion()">Ver puntuación</button>
-      <button onclick="renderMenu()">Menú principal</button>
-    </div>
-  `;
-  dibujaCircuito();
+  ctx.closePath();
+  ctx.stroke();
+  // Línea meta
+  ctx.strokeStyle = "#e10600";
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  const meta = pista.puntos[0], meta2 = pista.puntos[5];
+  ctx.moveTo(meta.x, meta.y);
+  ctx.lineTo(meta2.x, meta2.y);
+  ctx.stroke();
+  ctx.restore();
 }
 
-function renderPuntuacion() {
-  app.innerHTML = `
-    <div class="puntuacion">
-      <h2>Tu puntuación</h2>
-      <ul>
-        ${estado.carreras.map(c => `<li>${c.circuito}: posición ${c.posicion}, puntos ${c.puntos}</li>`).join("")}
-      </ul>
-      <h3>Puntos totales: ${estado.puntos}</h3>
-      <button onclick="renderSeleccion()">Continuar temporada</button>
-      <button onclick="renderMenu()">Menú principal</button>
-    </div>
-  `;
-  document.getElementById('circuito-canvas').style.display = 'none';
+function drawHUD() {
+  ctx.fillStyle="#222d";
+  ctx.fillRect(0,0,220,100);
+  ctx.fillStyle="#fff";
+  ctx.font="20px Segoe UI";
+  ctx.fillText("Vueltas: "+(player.lap+1), 30, 40);
+  ctx.fillText("Posición: "+getPosicionJugador(), 30, 70);
 }
 
-function dibujaCircuito() {
-  const canvas = document.getElementById('circuito-canvas');
-  if (!canvas) return;
-  canvas.style.display = 'block';
-  const ctx = canvas.getContext('2d');
+function getPosicionJugador() {
+  // Ordenar por vueltas y target (avance en pista)
+  const todos = [player, ...rivales];
+  todos.sort((a,b) => b.lap - a.lap || b.target - a.target);
+  return todos.indexOf(player)+1;
+}
+
+function gameLoop() {
+  // Cámara sigue al jugador
+  const camX = player.x, camY = player.y;
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  // Dibuja una pista ovalada simple
-  ctx.strokeStyle = '#e10600';
-  ctx.lineWidth = 10;
-  ctx.beginPath();
-  ctx.ellipse(350, 150, 300, 100, 0, 0, 2*Math.PI);
-  ctx.stroke();
-  // Meta
-  ctx.lineWidth = 4;
-  ctx.strokeStyle = '#fff';
-  ctx.beginPath();
-  ctx.moveTo(350-300, 150);
-  ctx.lineTo(350-300, 150+40);
-  ctx.stroke();
-  // Texto
-  ctx.fillStyle = "#fff";
-  ctx.font = "20px Arial";
-  ctx.fillText("Circuito: " + estado.circuito.nombre, 20, 30);
-  ctx.fillText("Vueltas: " + estado.circuito.vueltas, 20, 60);
+  drawCircuito(camX, camY);
+  player.update(controles);
+  player.draw(camX, camY);
+  rivales.forEach(riv => {
+    riv.update();
+    riv.draw(camX, camY);
+  });
+  drawHUD();
+  requestAnimationFrame(gameLoop);
 }
 
-window.renderMenu = renderMenu;
-window.renderSeleccion = renderSeleccion;
-window.actualizaPilotos = actualizaPilotos;
-window.iniciarCarrera = iniciarCarrera;
-window.renderCarrera = renderCarrera;
-window.renderPuntuacion = renderPuntuacion;
-
-renderMenu();
+gameLoop();
