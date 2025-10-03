@@ -13,6 +13,6 @@
   <script src="carrera_piloto.js"></script>
   <script src="main.js"></script>
    <script src="circuito.js"></script>
-  <script src="enhancedRace.js"></script>
+  <script src="f1_big_circuit.js"></script>
 </body>
 </html>
