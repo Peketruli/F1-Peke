@@ -1,18 +1,11 @@
-<!DOCTYPE html>
-<html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>F1 Web Game</title>
+  <title>F1 Web - Modo Carrera</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="app"></div>
-  <canvas id="gameCanvas" width="800" height="600" style="display:none"></canvas>
+  <canvas id="circuito-canvas" width="700" height="300" style="display:none; margin:20px auto; background:#222; border:2px solid #e10600;"></canvas>
   <script src="data.js"></script>
-  <script src="coche.js"></script>
-  <script src="carrera_piloto.js"></script>
   <script src="main.js"></script>
-   <script src="circuito.js"></script>
-  <script src="f1_big_circuit.js"></script>
 </body>
-</html>
